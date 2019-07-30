@@ -1,6 +1,10 @@
-# python YOLO_vid.py -i vid_inputs/car_crash.mp4 -o vid_outputs/car_crasmp4 -y yolov3
-# functional programming is purely for better readability
+# ==================================
+# Video Object Detection with YOLOv3
+# ==================================
 
+# RUN WITH EXAMPLE COMMAND BELOW:
+
+# python YOLO_vid.py -i vid_inputs/car_crash.mp4 -o vid_outputs/car_crasmp4 -y yolov3
 
 import numpy as np
 import argparse
@@ -9,8 +13,7 @@ import time
 import cv2
 import os
 
-
-# argument parse into dictionary (more flexible with variables, description in "help")
+"""User inputs through command line"""
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--input", required=True, help="path to input video")
 ap.add_argument("-o", "--output", required=True, help="path to output video")
@@ -21,7 +24,7 @@ args = vars(ap.parse_args())
 
 
 def get_model():
-	# load YOLOv3 use cv2 built in DNN module (arguments are configeration and weights path)
+	"""Load YOLOv3 using cv2 built in DNN module."""
 	model = cv2.dnn.readNetFromDarknet(os.path.sep.join([args["yolo"], "yolov3.cfg"]), 
 												os.path.sep.join([args["yolo"], "yolov3.weights"]))
 
@@ -38,15 +41,15 @@ def get_model():
 
 
 def get_color(labels):
-	# initialize random colors
+	"""Initialize random colors."""
 	np.random.seed(1)
-	colors = np.random.randint(0, 255, size=(len(labels),3), dtype="uint8")
+	colors = np.random.randint(0, 255, size=(len(labels), 3), dtype="uint8")
 
 	return colors
 
 
 def init_video():
-	# initialize video stream
+	"""Initialize video stream."""
 	video_stream = cv2.VideoCapture(args["input"])
 	writer = None # videoWriter object
 	(frame_width, frame_height) = (None, None)
@@ -55,7 +58,7 @@ def init_video():
 
 
 def get_frame_number(video_stream):
-	# get to get frames number, not sure if the video format is supported
+	"""Try to get total frame number for estimating process time."""
 	try: 
 		prop = cv2.cv.CV_CAP_PROP_FRAME_COUNT if imutils.is_cv2() else cv2.CAP_PROP_FRAME_COUNT
 		num_frame = int(video_stream.get(prop))
@@ -66,17 +69,20 @@ def get_frame_number(video_stream):
 
 	return num_frame
 
-#
-# below functions are all called from loop_frames function
-#
+
+# -----------------------------------------------------------
+# Below functions are all called in the video stream pipeline
+# -----------------------------------------------------------
+
 
 def preprocess_input(model, frame):
-	# process frame and set as input
-	blob = cv2.dnn.blobFromImage(frame, 1.0/255, (416,416), swapRB=True, crop=False)
+	"""Augment input and set up for forward pass."""
+	blob = cv2.dnn.blobFromImage(frame, 1.0 / 255, (416, 416), swapRB=True, crop=False)
 	model.setInput(blob)
 
 
 def get_input(video_stream, frame_width, frame_height):
+	"""Grab frames and return dimensions."""
 	(grabbed, frame) = video_stream.read()
 	# end of video, break out of loop
 	if not grabbed:
@@ -88,26 +94,26 @@ def get_input(video_stream, frame_width, frame_height):
 
 
 def forward_pass(writer, model, out_layer_names, num_frame):
-	# pass forward, record time
+	"""Forward pass, non-max suppression done by default. Estimate process time."""
 	tick = time.time()
 	layer_outputs = model.forward(out_layer_names)
 	tock = time.time()
 
 	# writer is uninitialized for the first frame only
 	if writer == None and num_frame > 0:
-		print("YOLOv3 took {:.3f} seconds for one frame".format(tock-tick))
-		print("YOLOv3 takes estimated total time of {:.3f} seconds for the video".format((tock-tick)*num_frame))
+		print("YOLOv3 took {:.3f} seconds for one frame".format(tock - tick))
+		print("YOLOv3 takes estimated total time of {:.3f} seconds for the video".format((tock - tick) * num_frame))
 
 	return layer_outputs
 
 
 def filter_output(layer_outputs, frame_width, frame_height):
-	# initialize lists for bounding box
+	"""Get lists for bounding box."""
 	boxes = [] 
 	confidences = []
 	classIDs = [] 
 
-	# process ouput
+	# process output
 	for output in layer_outputs:
 		for detection in output:
 			scores = detection[5:] # detection starts with locational variables (0 to 1)
@@ -118,8 +124,8 @@ def filter_output(layer_outputs, frame_width, frame_height):
 				box_data = detection[:4] * np.array([frame_width, frame_height, frame_width, frame_height]) 
 				(center_X, center_Y, box_width, box_height) = box_data.astype("int")
 
-				x = int(center_X - (box_width/2))
-				y = int(center_Y - (box_height/2))
+				x = int(center_X - (box_width / 2))
+				y = int(center_Y - (box_height / 2))
 
 				# record box data, confidence, and class ID for the detected (note boxes is 2d)
 				boxes.append([x, y, int(box_width), int(box_height)])
@@ -133,22 +139,22 @@ def filter_output(layer_outputs, frame_width, frame_height):
 
 
 def draw_box(frame, boxes, confidences, classIDs, indices, labels, colors):
-	# at least one object is detected or python would see empty list as tuple and throw error
+	"""Draw all bounding boxes."""
 	if len(indices) > 0:
 		for i in indices.flatten():
 			x,y,w,h = boxes[i][0],boxes[i][1],boxes[i][2],boxes[i][3]
 
 			# draw, where OpenCV library certainly shines
 			color = [int(c) for c in colors[classIDs[i]]]
-			cv2.rectangle(frame, (x,y), (x+w, y+h), color, 1)
+			cv2.rectangle(frame, (x, y), (x + w, y + h), color, 1)
 			object_name = "{}: {:.4f}".format(labels[classIDs[i]], confidences[i])
-			cv2.putText(frame, object_name, (x, y-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+			cv2.putText(frame, object_name, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
 
 	return frame
 
 
 def write_to_video(writer, frame):
-	# initialize writer for first frame, return it to stop forward_pass second line
+	"""Initialize writer for first frame."""
 	if writer is None:
 		fourcc = cv2.VideoWriter_fourcc(*"mp4v") # or change to *"MJPG")
 		writer = cv2.VideoWriter(args["output"], fourcc, 30, (frame.shape[1], frame.shape[0]), True)
@@ -159,7 +165,7 @@ def write_to_video(writer, frame):
 
 
 def loop_frames(labels, colors, model, out_layer_names, video_stream, writer, frame_width, frame_height, num_frame):
-	# as name suggests, this function loops through each frame until no frame is grabbed
+	"""Loop through each frame until no frame is grabbed"""
 	while True:
 		frame, frame_height, frame_width, grabbed = get_input(video_stream, frame_width, frame_height)
 		if not grabbed:
@@ -175,10 +181,11 @@ def loop_frames(labels, colors, model, out_layer_names, video_stream, writer, fr
 
 
 def show_output():
-	# create output_stream and let the user watch the output
+	"""Show output as a frame in video stream, press q to exit and update the fps."""
 	output_stream = cv2.VideoCapture(args["output"])
 	if (output_stream.isOpened() == False):  
 		print("Error opening video file, try opening it from the output path") 
+
 	while output_stream.isOpened():
 		grabbed, frame = output_stream.read()
 		if grabbed == True:
@@ -188,17 +195,20 @@ def show_output():
 				break
 		else:
 			break
+
 	# clean up output
 	output_stream.release() 
 	cv2.destroyAllWindows() 
 
 
 def clean_up(writer, video_stream):
+	"""Stop recording fps and display performance data."""
 	writer.release()
 	video_stream.release()
 
 
 def run():
+	"""Organize and call the useful functions."""
 	labels, model, out_layer_names = get_model()
 	colors = get_color(labels)
 	video_stream, writer, frame_width, frame_height = init_video()

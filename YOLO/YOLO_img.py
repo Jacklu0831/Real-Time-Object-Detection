@@ -1,6 +1,10 @@
-# python YOLO_img.py -i img_inputs/work_table.jpg -o img_outputs/work_table.jpg -y yolov3 -d 10" into command prompt
-# functional programming is purely for better readability
+# ================================
+# Image Object Detection with YOLO
+# ================================
 
+# RUN WITH EXAMPLE COMMAND BELOW:
+
+# python YOLO_img.py -i img_inputs/work_table.jpg -o img_outputs/work_table.jpg -y yolov3 -d 10" into command prompt
 
 import numpy as np
 import argparse
@@ -8,8 +12,7 @@ import time
 import cv2
 import os
 
-
-# argument parse into dictionary (more flexible with variables, description in "help")
+"""User inputs through command line"""
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--input", required=True, help="path to input image")
 ap.add_argument("-o", "--output", required=True, help="path to output image")
@@ -21,24 +24,23 @@ args = vars(ap.parse_args())
 
 
 def get_model():
-	# load YOLOv3 use cv2 built in DNN module (arguments are configeration and weights path)
+	"""Load YOLOv3 use cv2 built in DNN module."""
 	model = cv2.dnn.readNetFromDarknet(os.path.sep.join([args["yolo"], "yolov3.cfg"]), 
 												os.path.sep.join([args["yolo"], "yolov3.weights"]))
 
-	# load COCO class labels (open coco.names file (concatenated) -> extract string -> removed lead and end
-	# whitespace, split by \n)
+	# load COCO class labels (open file (concatenated) -> extract string -> removed lead and end
+	# whitespace, split by line break)
 	labels = open(os.path.sep.join([args["yolo"], "coco.names"])).read().strip().split("\n")
 
 	# get output layer names (getLayerNames not subscriptable)
 	getLayer = model.getLayerNames()
 	out_layer_names = [getLayer[i[0] - 1] for i in model.getUnconnectedOutLayers()]
-	# print("YOLOv3 output layer names:", *out_layer_names, sep=" ")
 
 	return labels, model, out_layer_names
 
 
 def get_input():
-	# read image and get spatial dimensions
+	"""Read image and get spatial dimensions."""
 	image = cv2.imread(args["input"])
 	image_height, image_width = image.shape[:2]
 
@@ -46,13 +48,13 @@ def get_input():
 
 
 def preprocess_input(model, image):
-	# process image and set as input
-	blob = cv2.dnn.blobFromImage(image, 1.0/255, (416,416), swapRB=True, crop=False)
+	"""Process image and set it as input."""
+	blob = cv2.dnn.blobFromImage(image, 1.0 / 255, (416, 416), swapRB=True, crop=False)
 	model.setInput(blob)
 
 
 def forward_pass(model, layer_names):
-	# pass forward, record time
+	"""Pass forward, keep track of time."""
 	tick = time.time()
 	layer_outputs = model.forward(layer_names)
 	tock = time.time()
@@ -62,7 +64,7 @@ def forward_pass(model, layer_names):
 
 
 def filter_output(layer_outputs, image_width, image_height):
-	# initialize lists for bounding box
+	"""Initialize lists for bounding box."""
 	boxes = []
 	confidences = []
 	classIDs = []
@@ -70,15 +72,15 @@ def filter_output(layer_outputs, image_width, image_height):
 	# process output
 	for output in layer_outputs:
 		for detection in output:
-			scores = detection[5:] # detection starts with locational variables (0 to 1) then confidences
+			scores = detection[5:]  # detection starts with locational variables (0 to 1) then confidences
 			classID = np.argmax(scores)
 			confidence = scores[classID] 
 
 			if confidence > args["confidence"]: # filter out low confidence
 				box_data = detection[:4] * np.array([image_width, image_height, image_width, image_height]) 
 				(center_X, center_Y, box_width, box_height) = box_data.astype("int")
-				x = int(center_X - (box_width/2))
-				y = int(center_Y - (box_height/2))
+				x = int(center_X - (box_width / 2))
+				y = int(center_Y - (box_height / 2))
 
 				# record box data, confidence, and class ID for the detected (note boxes is 2d)
 				boxes.append([x, y, int(box_width), int(box_height)])
@@ -92,31 +94,31 @@ def filter_output(layer_outputs, image_width, image_height):
 
 
 def get_color(labels):
-	# initialize random colors for difference objects
+	"""Initialize random colors for difference objects."""
 	np.random.seed(1)
-	colors = np.random.randint(0, 255, size=(len(labels),3), dtype="uint8")
+	colors = np.random.randint(0, 255, size=(len(labels), 3), dtype="uint8")
 
 	return colors
-
+	
 
 def draw_box(image, boxes, confidences, classIDs, indices, labels):
-	# at least one object is detected or python would see empty list as tuple and throw error
+	"""Draw all bounding boxes."""
 	colors = get_color(labels)
 	if len(indices)>0:
 		for i in indices.flatten():
 			x,y,w,h = boxes[i][0],boxes[i][1],boxes[i][2],boxes[i][3]
 
-			# draw, where OpenCV certainly shines
+			# draw rectangles and put text
 			color = [int(c) for c in colors[classIDs[i]]]
-			cv2.rectangle(image, (x,y), (x+w, y+h), color, 1)
+			cv2.rectangle(image, (x, y), (x + w, y + h), color, 1)
 			object_name = "{}: {:.4f}".format(labels[classIDs[i]], confidences[i])
-			cv2.putText(image, object_name, (x, y-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+			cv2.putText(image, object_name, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
 	
 	return image
 
 
 def show_output(output_image):
-	# show output for specified time
+	"""Show output for specified time."""
 	cv2.imwrite(args["output"], output_image)
 	print("Finished!")
 	print("Image will be displayed for {} seconds".format(args["display_time"]))
@@ -125,6 +127,7 @@ def show_output(output_image):
 
 
 def run():
+	"""Organize and call the useful functions."""
 	labels, model, layer_names = get_model()
 	image, image_width, image_height = get_input()
 	preprocess_input(model, image)
