@@ -4,7 +4,7 @@
 
 # RUN WITH EXAMPLE COMMAND BELOW:
 
-# python real_time_object_detection.py --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
+# python SSD_live.py
 
 from imutils.video import VideoStream, FPS
 import numpy as np 
@@ -15,8 +15,6 @@ import cv2
 
 """User inputs through command line (no input & output since this is through device camera)"""
 ap = argparse.ArgumentParser()
-ap.add_argument("-p", "--prototxt", required=True, help="path to Caffe file")
-ap.add_argument("-m", "--model", required=True, help="path to pre-trained model")
 ap.add_argument("-c", "--confidence", type=float, default=0.35, help="minimum probability to filter weak detections")
 args = vars(ap.parse_args())
 
@@ -25,7 +23,7 @@ def get_model():
 	"""Load SSD with caffemodel."""
 	labels = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow",
 		"diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
-	net = cv2.dnn.readNetFromCaffe(args["prototxt"], args["model"])
+	net = cv2.dnn.readNetFromCaffe("MobileNetSSD_deploy.prototxt.txt", "MobileNetSSD_deploy.caffemodel")
 
 	return labels, net
 
@@ -55,6 +53,7 @@ def init_video():
 
 def get_input(video_stream):
 	"""Grab frames and return dimensions."""
+
 	frame = video_stream.read()
 	frame = resize(frame, width = 400)
 	(frame_height, frame_width) = frame.shape[:2]

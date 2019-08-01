@@ -1,14 +1,17 @@
-# =============================================
-# Webcam Real-Time Object Detection with YOLOv3
-# =============================================
+# ===========================================================
+# Webcam Real-Time Object Detection with YOLOv3 / YOLOv3-tiny
+# ===========================================================
 
-# RUN WITH EXAMPLE COMMAND BELOW:
+# RUN WITH EXAMPLE COMMANDS BELOW:
 
+# python YOLO_live.py -y yolov3-tiny
 # python YOLO_live.py -y yolov3
+
 
 import numpy as np
 import argparse
 from imutils.video import VideoStream, FPS
+from imutils import resize
 import imutils
 import time
 import cv2
@@ -16,16 +19,16 @@ import os
 
 """User inputs through command line (no input & output since this is through device camera)"""
 ap = argparse.ArgumentParser()
-ap.add_argument("-y", "--yolo", required=True, help="base path to YOLO directory")
-ap.add_argument("-c", "--confidence", type=float, default=0.5, help="minimum probability to filter weak detections")
+ap.add_argument("-y", "--yolo", required=True, help="base path to YOLO directory") # pass in either yolov3 or yolov3-tiny
+ap.add_argument("-c", "--confidence", type=float, default=0.3, help="minimum probability to filter weak detections")
 ap.add_argument("-t", "--threshold", type=float, default=0.3, help="threshold when applying non-maxima suppression")
 args = vars(ap.parse_args())
 
 
 def get_model():
-	"""Load YOLOv3 using cv2 built in DNN module."""
-	net = cv2.dnn.readNetFromDarknet(os.path.sep.join([args["yolo"], "yolov3.cfg"]), 
-												os.path.sep.join([args["yolo"], "yolov3.weights"]))
+	"""Load YOLOv3 or YOLOv3-tiny using cv2 built in DNN module."""
+	net = cv2.dnn.readNetFromDarknet(os.path.sep.join([args["yolo"], "yolo.cfg"]), 
+												os.path.sep.join([args["yolo"], "yolo.weights"]))
 	labels = open(os.path.sep.join([args["yolo"], "coco.names"])).read().strip().split("\n")
 
 	getLayer = net.getLayerNames()
@@ -38,7 +41,7 @@ def get_color(labels):
 	"""Initialize random colors."""
 	np.random.seed(1)
 	colors = np.random.randint(0, 255, size=(len(labels), 3), dtype="uint8")
-	
+
 	return colors
 
 
@@ -59,6 +62,7 @@ def init_video():
 def get_input(video_stream):
 	"""Grab frames and return dimensions."""
 	frame = video_stream.read()
+	# frame = resize(frame, width = 400)
 	(frame_height, frame_width) = frame.shape[:2]
 
 	return frame, frame_width, frame_height
@@ -101,7 +105,7 @@ def filter_output(yolo_output, frame_width, frame_height):
 				boxes.append([x, y, int(box_width), int(box_height)])
 				confidences.append(float(confidence))
 				classIDs.append(classID)
-
+				
 	# with box dimension, we can now call non-maxima suppression (filtering out overlapping)
 	indices = cv2.dnn.NMSBoxes(boxes, confidences, args["confidence"], args["threshold"])
 
@@ -114,7 +118,7 @@ def draw_box(frame, boxes, confidences, classIDs, indices, labels, colors):
 		for i in indices.flatten():
 			x,y,w,h = boxes[i][0],boxes[i][1],boxes[i][2],boxes[i][3]
 			color = [int(c) for c in colors[classIDs[i]]]
-			cv2.rectangle(frame, (x, y), (x + w, y + h), color, 1)
+			cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
 			object_name = "{}: {:.4f}".format(labels[classIDs[i]], confidences[i])
 			cv2.putText(frame, object_name, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
 
