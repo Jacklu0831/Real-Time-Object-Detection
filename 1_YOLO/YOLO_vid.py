@@ -4,7 +4,7 @@
 
 # RUN WITH EXAMPLE COMMAND BELOW:
 
-# python YOLO_vid.py -i vid_inputs/car_crash.mp4 -o vid_outputs/car_crasmp4 -y yolov3
+# python YOLO_vid.py -i vid_IO/drive.mp4 -o vid_IO/drive_processed.mp4 -y yolov3
 
 import numpy as np
 import argparse

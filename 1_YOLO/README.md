@@ -20,7 +20,7 @@ Below are screen-captured videos that let me and you really see the difference i
 
 **Frames per Second**
 
-Note that the FPS is only how fast my laptop is able to handle the job and they are only here to compare the performance between models. For example, [here](https://towardsdatascience.com/yolo-you-only-look-once-real-time-object-detection-explained-492dc9230006) YOLOv2 ran at 45 FPS and tiny ran at 155 FPS on good GPUs. However, it could be calculated that YOLOv3-tiny is almost 2.5 as fast than YOLOv3, implying much less computational expense due to having a shallower neural architecture and less parameters to train (more details in Background section).
+Note that the FPS is only how fast my laptop is able to handle the job and they are only here to compare the performance between models. For example, [here](https://towardsdatascience.com/yolo-you-only-look-once-real-time-object-detection-explained-492dc9230006) YOLOv2 ran at 45 FPS and tiny ran at 155 FPS on good GPUs. However, it could be calculated that YOLOv3-tiny is almost 2.5 as fast than YOLOv3, implying much less computational expense due to having a shallower neural architecture and less parameters to train (more details in the Background section).
 
 A effective way to increase the FPS is to simply modify the config file of the models to decrease the frame size being processed by the network. However, low resolution images contain less information, the feature extraction process will be much more prone to errors and small objects that are further away will not be contained in the pixelated images at all (this is actually a big problem I am facing in the [SRGAN project](https://github.com/Jacklu0831/Super-Resolution-GAN)). By decreasing input frame resolution, I was able to increase the FPS of YOLOv3 to as fast as YOLOv3-tiny at the cost of worse accuracy than YOLOv3-tiny, which is expected. 
 
@@ -54,7 +54,7 @@ YOLO uses a single CNN network for both classification and object localization w
 
 <p align="center"><image src="assets/yolo_model.png"></image></p>
 
-Shown in the image above, YOLOv3 has 75 convolutional layers and not a single fully-connected layer, it also employs ResNet-alike structure as a way to improve accuracy from its predecessors. On the other hand, YOLOv3 only uses 16 convolutional layers and 2 fully-connected layers. Therefore, as shown in Performance section,YOLOv3-tiny has significantly less accuracy than YOLOv3. 
+Shown in the image above, YOLOv3 has 75 convolutional layers and not a single fully-connected layer, it also employs ResNet-alike structure as a way to improve accuracy from its predecessors. On the other hand, YOLOv3 only uses 16 convolutional layers and 2 fully-connected layers. Therefore, as shown in the Performance section,YOLOv3-tiny has significantly less accuracy than YOLOv3. 
 
 ---
 
@@ -68,6 +68,7 @@ YOLO_live.py         - Implementation: live video stream
 img_IO               - Directory for input/output images                    
 vid_IO               - Directory for input videos 
 vid_outputs          - Directory for output videos 
+vid_live             - Directory for output saved live outputs
 assets               - Some pictures for README
 </pre>
 

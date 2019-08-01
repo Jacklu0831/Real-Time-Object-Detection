@@ -4,7 +4,7 @@
 
 # RUN WITH EXAMPLE COMMAND BELOW:
 
-# python real_time_object_detection.py --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
+# python real_time_object_detection.py
 
 from imutils.video import VideoStream, FPS
 import numpy as np 

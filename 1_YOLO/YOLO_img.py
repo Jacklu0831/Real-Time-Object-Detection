@@ -4,7 +4,7 @@
 
 # RUN WITH EXAMPLE COMMAND BELOW:
 
-# python YOLO_img.py -i img_inputs/work_table.jpg -o img_outputs/work_table.jpg -y yolov3 -d 10" into command prompt
+# python YOLO_img.py -i img_IO/work_table.jpg -o img_IO/work_table_processed.jpg -y yolov3 -d 10" into command prompt
 
 import numpy as np
 import argparse
