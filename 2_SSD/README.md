@@ -8,7 +8,7 @@ Note that I did not build and train the models in this repo since my primary foc
 
 ## Performance (real-time)
 
-Below are screen-captured videos that let me and you really see how fast the frame rate produced is. The reasons (the math) behind why MobileNet SSD is so much faster than YOLO will be explained in the Background section below. 
+Below are screen-captured videos that let me and you really see how fast the frame rate produced is. The reasons (the math) behind why MobileNet SSD is fast will be explained in the Background section below. 
 
 <h3 align="center"><b>SSD - avg 14.56 FPS</b></h3>
 
